@@ -9,7 +9,7 @@ use HTTP::Request::Common;
 use Carp;
 use sigtrap qw(die untrapped normal-signals);
 use vars qw( $VERSION );
-$VERSION = '0.4';
+$VERSION = '0.41';
 
 =head1 NAME
 
