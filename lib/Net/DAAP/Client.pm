@@ -146,7 +146,7 @@ sub _init {
     my %opts = @_;
 
     foreach my $key (@User_Columns) {
-        $self->{$key} ||= $opts{$key} ||= "";
+        $self->{$key} = $opts{$key} || $Defaults{$key};
     }
 }
 
@@ -196,17 +196,6 @@ sub connect {
     $id = dmap_seek(dmap_unpack($dmap), "dmap.loginresponse/dmap.sessionid");
     $self->{ID} = $id;
     $self->_debug("my id is $id\n");
-
-    # get update
-    $dmap = $self->_do_get("update");
-    unless ($dmap) {
-        $self->disconnect;
-        return;
-    }
-    $revision = dmap_seek(dmap_unpack($dmap),
-                          "dmap.updateresponse/dmap.serverrevision");
-    $self->{REVISION} = $revision;
-    $self->_debug("revision $revision\n");
 
     $self->{CONNECTED} = 1;
 
