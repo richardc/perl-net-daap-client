@@ -1,3 +1,8 @@
+HEAD
+	Cleaned up the DESTROY/disconnect logic a little
+	Added a t/compile.t and moved the other tests over to the
+	Net::DAAP::DMAP dist as they were really testing DMAP unpacking.
+
 0.41	Monday 26th July, 2004
 	No longer call the /update thing as it hangs on daapd, and we
 	don't currently use the value
