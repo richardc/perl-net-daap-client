@@ -8,11 +8,7 @@ MANIFEST
 README
 AUTHORS
 META.yml
-t/1.t
-t/login.flattened
-t/login.response
-t/login.unpacked
-t/login.xml
+t/compile.t
 LEGAL
 TODO
 examples/dmap.dumper
