@@ -77,7 +77,6 @@ my %Defaults = (
                             daap.songalbum daap.songartist daap.songformat
                             daap.songsize) ],
 
-
     # private
     ERROR         => "",
     CONNECTED     => 0,
@@ -87,6 +86,7 @@ my %Defaults = (
     PLAYLISTS     => undef,
     VALIDATOR     => undef,
    );
+
 
 sub new {
     my $class = shift;
@@ -169,9 +169,18 @@ returning C<undef>.
 =cut
 
 
+# quite the fugly hack
+my @credentials;
+{
+    package Net::DAAP::Client::UA;
+    use base qw( LWP::UserAgent );
+    sub get_basic_credentials { return @credentials }
+}
+
 sub connect {
     my $self = shift;
-    my $ua = ($self->{UA} ||= LWP::UserAgent->new(keep_alive => 1) );
+    my $ua = ($self->{UA} ||= Net::DAAP::Client::UA->new(keep_alive => 1) );
+    @credentials = $self->{PASSWORD} ? ('iTunes_4.6', $self->{PASSWORD}) : ();
     my ($dmap, $id);
 
     $self->error("");
