@@ -2,6 +2,7 @@ use strict;
 package Net::DAAP::Client;
 use Net::DAAP::Client::v2;
 use Net::DAAP::Client::v3;
+use Net::DAAP::DMAP 1.21;
 use Net::DAAP::DMAP qw(:all);
 use LWP;
 use HTTP::Request::Common;
@@ -65,12 +66,17 @@ store your object in a lexical (C<my>) variable.
 =cut
 
 my $DAAP_Port = 3689;
+my @User_Columns = qw( SERVER_HOST SERVER_PORT PASSWORD DEBUG SONG_ATTRIBUTES );
 my %Defaults = (
     # user-specified
     SERVER_HOST   => "",
     SERVER_PORT   => $DAAP_Port,
     PASSWORD      => "",
     DEBUG         => 0,
+    SONG_ATTRIBUTES => [ qw(dmap.itemid dmap.itemname dmap.persistentid
+                            daap.songalbum daap.songartist daap.songformat
+                            daap.songsize) ],
+
 
     # private
     ERROR         => "",
@@ -122,6 +128,15 @@ The password to use when authenticating.
 
 Print some debugging output
 
+
+=item SONG_ATTRIBUTES
+
+The attributes to retrieve for a song as an array reference.  The
+default list is:
+
+ [qw( dmap.itemid dmap.itemname dmap.persistentid daap.songalbum
+      daap.songartist daap.songformat daap.songsize )]
+
 =back
 
 =cut
@@ -130,7 +145,7 @@ sub _init {
     my $self = shift;
     my %opts = @_;
 
-    foreach my $key (qw(SERVER_HOST SERVER_PORT PASSWORD DEBUG)) {
+    foreach my $key (@User_Columns) {
         $self->{$key} ||= $opts{$key} ||= "";
     }
 }
@@ -293,10 +308,11 @@ sub db {
 
     $songs = $obj->songs();
 
-Returns a hash reference.  Keys are song IDs, values are hashes
-with information on the song.  Information fetched is:
+Returns a hash reference.  Keys are song IDs, values are hashes with
+information on the song.  Information fetched is specified by
+SONG_ATTRIBUTES, the default set is:
 
-=over 4
+=over
 
 =item dmap.itemid
 
@@ -340,6 +356,9 @@ A sample record:
         'daap.songformat' => 'mp3'
         },
 
+To find out what other attributes you can request consult the DAAP
+spec at http://tapjam.net/daap/draft.html
+
 =cut
 
 sub songs {
@@ -378,8 +397,8 @@ sub playlists {
 sub _get_songs {
     my ($self, $db_id) = @_;
 
-    my @ATTRS = qw(dmap.itemid dmap.itemname dmap.persistentid daap.songalbum daap.songartist daap.songformat daap.songsize);
-    my $path = "databases/$db_id/items?type=music&meta=" . join(",", @ATTRS);
+    my $path = "databases/$db_id/items?type=music&meta=" .
+      join ",", @{ $self->{SONG_ATTRIBUTES} };
     my $res = $self->_do_get($path) or return;
 
     my $listing = dmap_seek(dmap_unpack($res),
@@ -648,7 +667,7 @@ sub disconnect {
 
 sub DESTROY {
     my $self = shift;
-    print "Destroying $self->{ID} to $self->{SERVER_HOST}\n";
+    $self->_debug("Destroying $self->{ID} to $self->{SERVER_HOST}\n");
     $self->disconnect if $self->{CONNECTED};
 }
 
