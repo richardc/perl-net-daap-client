@@ -1,6 +1,6 @@
 Changes
-lib/Net/DAAP/DMAP.pm
 lib/Net/DAAP/Client.pm
+Build.PL
 Makefile.PL
 MANIFEST
 README
