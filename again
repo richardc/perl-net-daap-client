@@ -1,0 +1,6 @@
+#!perl
+use strict;
+use Net::DAAP::Client;
+for (1..4) {
+    Net::DAAP::Client->new(SERVER_HOST => 'localhost', DEBUG => 1);
+}
