@@ -6,7 +6,6 @@ responses to DAAP requests contain a binary DMAP structure.
 
 This distribution contains:
 
-  Net::DAAP::DMAP    - utility routines for reading and creating DMAP records
   Net::DAAP::Client  - code to talk to a DAAP server
 
 You must have the LWP module set installed to use this code.
