@@ -10,8 +10,8 @@ package Net::DAAP::Client;
 
   my $daap;  # see WARNING below
   $daap = Net::DAAP::Client->new(SERVER_HOST => $hostname,
-				 SERVER_PORT => $portnum,
-				 PASSWORD    => $password);
+                                 SERVER_PORT => $portnum,
+                                 PASSWORD    => $password);
   $dsn = $daap->connect;
 
   $dbs_hash = $daap->databases;
@@ -65,29 +65,29 @@ use sigtrap qw(die untrapped normal-signals);
 
 my $DAAP_Port = 3689;
 my %Defaults = (
-		SERVER_HOST   => "",
-		SERVER_PORT   => $DAAP_Port,
-		PASSWORD      => "",
-		DEBUG         => 1,
-		ERROR         => "",
-		CONNECTED     => 0,
-		DATABASE_LIST => undef,
-		DATABASE      => undef,
-		SONGS         => undef,
-		PLAYLISTS     => undef,
-		);
+                SERVER_HOST   => "",
+                SERVER_PORT   => $DAAP_Port,
+                PASSWORD      => "",
+                DEBUG         => 1,
+                ERROR         => "",
+                CONNECTED     => 0,
+                DATABASE_LIST => undef,
+                DATABASE      => undef,
+                SONGS         => undef,
+                PLAYLISTS     => undef,
+                );
 
 sub new {
     my $class = shift;
     my $self = bless { %Defaults } => $class;
 
     if (@_ > 1) {
-	$self->_init(@_);
+        $self->_init(@_);
     } elsif (@_) {
-	$self->{SERVER_HOST} = shift;
+        $self->{SERVER_HOST} = shift;
     } else {
-	warn "Why are you calling new with no arguments?";
-	die "Need to implement get/set for hostname and port";
+        warn "Why are you calling new with no arguments?";
+        die "Need to implement get/set for hostname and port";
     }
 
     return $self;
@@ -122,7 +122,7 @@ sub _init {
     my %opts = @_;
 
     foreach my $key (qw(SERVER_HOST SERVER_PORT PASSWORD)) {
-	$self->{$key} ||= $opts{$key} ||= "";
+        $self->{$key} ||= $opts{$key} ||= "";
     }
 }
 
@@ -158,25 +158,26 @@ sub connect {
     my $data_source_name = dmap_to_hash_ref($dmap)->{msrv}{minm};
     $self->{DSN} = $data_source_name;
     $self->_debug("Connected to iTunes data $data_source_name\n");
+    #$self->protocol( dmap_to_hash_ref($dmap)->{msrv}{minm} );
 
     # get content codes
 #    $dmap = $self->_do_get("content-codes");
 #    update_content_codes(dmap_unpack($dmap));
-    
+
     # log in
     $dmap = $self->_do_get("login") or return;
     $id = dmap_seek(dmap_unpack($dmap), "dmap.loginresponse/dmap.sessionid");
     $self->{ID} = $id;
     $self->_debug("my id is $id\n");
-    
+
     # get update
     $dmap = $self->_do_get("update");
     if (! $dmap) {
-	$self->disconnect;
-	return;
+        $self->disconnect;
+        return;
     }
     $revision = dmap_seek(dmap_unpack($dmap),
-			  "dmap.updateresponse/dmap.serverrevision");
+                          "dmap.updateresponse/dmap.serverrevision");
     $self->{REVISION} = $revision;
     $self->_debug("revision $revision\n");
 
@@ -184,13 +185,13 @@ sub connect {
 
     # fetch databases
     my $dbs = $self->databases()
-	or return;
+        or return;
 
     # autoselect if only one database present
 
     if (keys(%$dbs) == 1) {
-	$self->db((keys %$dbs)[0])
-	    or return;
+        $self->db((keys %$dbs)[0])
+            or return;
     }
 
     return $self->{DSN};
@@ -210,17 +211,17 @@ sub databases {
     $self->error("");
 
     if (! $self->{CONNECTED}) {
-	$self->error("Not connected--can't fetch databases list");
-	return;
+        $self->error("Not connected--can't fetch databases list");
+        return;
     }
 
     my $res = $self->_do_get("databases");
     my $listing = dmap_seek(dmap_unpack($res),
-			    "daap.serverdatabases/dmap.listing");
+                            "daap.serverdatabases/dmap.listing");
 
     if (!$listing) {
-	$self->error("databases query didn't return a list of databases");
-	return;
+        $self->error("databases query didn't return a list of databases");
+        return;
     }
 
     my $struct = $self->_unpack_listing_to_hash($listing);
@@ -252,26 +253,26 @@ sub db {
     my $db;
 
     unless ($self->{DATABASE_LIST}) {
-	$self->error("You haven't fetched the list of databases yet");
-	return;
+        $self->error("You haven't fetched the list of databases yet");
+        return;
     }
 
     if (! defined $db_id) {
-	return $self->{DATABASE};
+        return $self->{DATABASE};
     }
 
     $db = $self->{DATABASE_LIST}{$db_id};
     if (defined $db) {
-	$self->{DATABASE} = $db_id;
-	$self->_debug("Loading songs from database $db->{'dmap.itemname'}\n");
-	$self->{SONGS} = $self->_get_songs($db_id)
-	    or return;
-	$self->_debug("Loading playlists from database $db->{'dmap.itemname'}\n");
-	$self->{PLAYLISTS} = $self->_get_playlists($db_id)
-	    or return;
+        $self->{DATABASE} = $db_id;
+        $self->_debug("Loading songs from database $db->{'dmap.itemname'}\n");
+        $self->{SONGS} = $self->_get_songs($db_id)
+            or return;
+        $self->_debug("Loading playlists from database $db->{'dmap.itemname'}\n");
+        $self->{PLAYLISTS} = $self->_get_playlists($db_id)
+            or return;
     } else {
-	$self->error("Database ID $db_id not found\n");
-	return;
+        $self->error("Database ID $db_id not found\n");
+        return;
     }
 
     return $self;
@@ -319,14 +320,14 @@ Size in bytes of the file.
 A sample record:
 
     '127' => {
-	'daap.songsize' => 2597221,
-	'daap.songalbum' => 'Live (Disc 2)',
-	'dmap.persistentid' => '4081440092921832180',
-	'dmap.itemname' => 'Down To The River To Pray',
-	'daap.songartist' => 'Alison Krauss + Union Station',
-	'dmap.itemid' => 127,
-	'daap.songformat' => 'mp3'
-	},
+        'daap.songsize' => 2597221,
+        'daap.songalbum' => 'Live (Disc 2)',
+        'dmap.persistentid' => '4081440092921832180',
+        'dmap.itemname' => 'Down To The River To Pray',
+        'daap.songartist' => 'Alison Krauss + Union Station',
+        'dmap.itemid' => 127,
+        'daap.songformat' => 'mp3'
+        },
 
 =cut
 
@@ -348,11 +349,11 @@ XXX: explain keys
 A sample record:
 
     '2583' => {
-	'dmap.itemcount' => 335,
-	'dmap.persistentid' => '4609413108325671202',
-	'dmap.itemname' => 'Recently Played',
-	'com.apple.itunes.smart-playlist' => 0,
-	'dmap.itemid' => 2583
+        'dmap.itemcount' => 335,
+        'dmap.persistentid' => '4609413108325671202',
+        'dmap.itemname' => 'Recently Played',
+        'com.apple.itunes.smart-playlist' => 0,
+        'dmap.itemid' => 2583
     }
 
 =cut
@@ -371,10 +372,10 @@ sub _get_songs {
     my $res = $self->_do_get($path) or return;
 
     my $listing = dmap_seek(dmap_unpack($res),
-			    "daap.databasesongs/dmap.listing");
+                            "daap.databasesongs/dmap.listing");
     if (!$listing) {
-	$self->error("no song database in response from server");
-	return;
+        $self->error("no song database in response from server");
+        return;
     }
 
     my $struct = $self->_unpack_listing_to_hash($listing);
@@ -387,13 +388,13 @@ sub _get_playlists {
     my ($self, $db_id) = @_;
 
     my $res = $self->_do_get("databases/$db_id/containers?meta=dmap.itemid,dmap.itemname,dmap.persistentid,com.apple.itunes.smart-playlist")
-	or return;
+        or return;
 
     my $listing = dmap_seek(dmap_unpack($res),
-			    "daap.databaseplaylists/dmap.listing");
+                            "daap.databaseplaylists/dmap.listing");
     if (!$listing) {
-	$self->error("no playlist in response from server");
-	return;
+        $self->error("no playlist in response from server");
+        return;
     }
 
     return $self->_unpack_listing_to_hash($listing);
@@ -413,34 +414,34 @@ sub playlist {
 
     my $db_id = $self->{DATABASE};
     if (!$db_id) {
-	$self->error("No database selected so can't fetch playlist");
-	return;
+        $self->error("No database selected so can't fetch playlist");
+        return;
     }
 
     if (!exists $self->{PLAYLISTS}->{$playlist_id}) {
-	$self->error("No such playlist $playlist_id");
-	return;
+        $self->error("No such playlist $playlist_id");
+        return;
     }
 
     my $res = $self->_do_get("databases/$db_id/containers/$playlist_id/items?type=music&meta=dmap.itemkind,dmap.itemid,dmap.containeritemid")
-	or return;
+        or return;
 
     my $listing = dmap_seek(dmap_unpack($res),
-			    "daap.playlistsongs/dmap.listing");
+                            "daap.playlistsongs/dmap.listing");
     if (!$listing) {
-	$self->error("Couldn't fetch playlist $playlist_id");
+        $self->error("Couldn't fetch playlist $playlist_id");
     }
 
     my $struct = [];
 
     foreach my $item (@$listing) {
-	my $record = {};
-	my $field_array_ref = $item->[1];
-	foreach my $field_pair_ref (@$field_array_ref) {
-	    my ($field, $value) = @$field_pair_ref;
-	    $record->{$field} = $value;
-	}
-	push @$struct, $self->{SONGS}->{ $record->{"dmap.itemid"} };
+        my $record = {};
+        my $field_array_ref = $item->[1];
+        foreach my $field_pair_ref (@$field_array_ref) {
+            my ($field, $value) = @$field_pair_ref;
+            $record->{$field} = $value;
+        }
+        push @$struct, $self->{SONGS}->{ $record->{"dmap.itemid"} };
     }
 
     return $struct;
@@ -452,13 +453,13 @@ sub _unpack_listing_to_hash {
     my $struct = {};
 
     foreach my $item (@$listing) {
-	my $record = {};
-	my $field_array_ref = $item->[1];
-	foreach my $field_pair_ref (@$field_array_ref) {
-	    my ($field, $value) = @$field_pair_ref;
-	    $record->{$field} = $value;
-	}
-	$struct->{$record->{'dmap.itemid'}} = $record;
+        my $record = {};
+        my $field_array_ref = $item->[1];
+        foreach my $field_pair_ref (@$field_array_ref) {
+            my ($field, $value) = @$field_pair_ref;
+            $record->{$field} = $value;
+        }
+        $struct->{$record->{'dmap.itemid'}} = $record;
     }
 
     return $struct;
@@ -485,8 +486,8 @@ sub url {
     $self->error("");
 
     if (!$self->{CONNECTED}) {
-	$self->error("Can't fetch URL when not connected");
-	return;
+        $self->error("Can't fetch URL when not connected");
+        return;
     }
 
     my $song_list = $self->{SONGS};
@@ -498,27 +499,27 @@ sub url {
     foreach my $id (@arg) {
         if (exists $song_list->{$id}) {
             my $song = $song_list->{$id};
-	    push @urls, $self->
-	    _build_resolve_url(database => $db,
-			       song     => $song->{"dmap.persistentid"});
+            push @urls, $self->
+            _build_resolve_url(database => $db,
+                               song     => $song->{"dmap.persistentid"});
         } elsif (exists $playlists->{$id}) {
             my $playlist = $playlists->{$id};
-	    push @urls, $self->
-	    _build_resolve_url(database => $db,
-			      playlist => $playlist->{"dmap.persistentid"});
+            push @urls, $self->
+            _build_resolve_url(database => $db,
+                              playlist => $playlist->{"dmap.persistentid"});
         } else {
-	    push @skipped, $id;
+            push @skipped, $id;
         }
     }
 
     if (@skipped) {
-	$self->error("skipped: @skipped");
+        $self->error("skipped: @skipped");
     }
 
     if (wantarray) {
-	return @urls;
+        return @urls;
     } else {
-	return $urls[0];
+        return $urls[0];
     }
 }
 
@@ -564,38 +565,38 @@ sub _download_songs {
         my $song = $song_list->{$song_id};
 
         if (!defined $song) {  # ok to blur defined() and exists() here
-	    push @skipped, $song_id;
-	    next;
-	}
-	my $response = $self->_get_song($self->{DATABASE}, $song, $dir);
-	if (!$response) {
-	    push @skipped, $song_id;
-	} else {
-	    push @songs, $dir ? $song_id : $response;
-	}
+            push @skipped, $song_id;
+            next;
+        }
+        my $response = $self->_get_song($self->{DATABASE}, $song, $dir);
+        if (!$response) {
+            push @skipped, $song_id;
+        } else {
+            push @songs, $dir ? $song_id : $response;
+        }
     }
 
     if (@skipped) {
-	$self->error("skipped: @skipped");
+        $self->error("skipped: @skipped");
     }
     if (wantarray) {
-	return @songs;
+        return @songs;
     } else {
-	return $songs[0];
+        return $songs[0];
     }
 }
 
 sub _get_song {
     my ($self, $db_id, $song, $dir) = @_;
-    my ($song_id, $format) = 
+    my ($song_id, $format) =
         ($song->{"dmap.itemid"}, $song->{"daap.songformat"});
     my $filename = "$song_id.$format";
 
     if ($dir) {
-	return $self->_do_get("databases/$db_id/items/$filename",
-			      "$dir/$filename");
+        return $self->_do_get("databases/$db_id/items/$filename",
+                              "$dir/$filename");
     } else {
-	return $self->_do_get("databases/$db_id/items/$filename");
+        return $self->_do_get("databases/$db_id/items/$filename");
     }
 }
 
@@ -649,7 +650,7 @@ Returns the most recent error code.  Empty string if no error occurred.
 sub error {
     my $self = shift;
     if ($self->{DEBUG} and defined($_[0]) and length($_[0])) {
-	warn "Setting error to $_[0]";
+        warn "Setting error to $_[0]";
     }
     if (@_) { $self->{ERROR} = shift } else { $self->{ERROR} }
 }
@@ -657,8 +658,8 @@ sub error {
 sub _do_get {
     my ($self, $req, $file) = @_;
     my $server_url = sprintf("http://%s:%d",
-			     $self->{SERVER_HOST},
-			     $self->{SERVER_PORT});
+                             $self->{SERVER_HOST},
+                             $self->{SERVER_PORT});
 
     if (!defined wantarray) { carp "_do_get's result is being ignored" }
 
@@ -671,16 +672,16 @@ sub _do_get {
 
     # append session-id and revision-number query args automatically
     if ($self->{ID}) {
-	if ($req =~ m{ \? }x) {
-	    $url .= "&";
-	} else {
-	    $url .= "?";
-	}
-	$url .= "session-id=$id";
+        if ($req =~ m{ \? }x) {
+            $url .= "&";
+        } else {
+            $url .= "?";
+        }
+        $url .= "session-id=$id";
     }
 
     if ($revision && $req ne 'logout') {
-	$url .= "&revision-number=$revision";
+        $url .= "&revision-number=$revision";
     }
 
     # fetch into memory or save to disk as needed
@@ -696,20 +697,20 @@ sub _do_get {
     # complain if the server sent back the wrong response
 
     if (! $res->is_success) {
-	$self->error("$url\n".$res->as_string);
-	return;
+        $self->error("$url\n".$res->as_string);
+        return;
     }
 
     my $content_type = $res->header("Content-Type");
     if ($req ne 'logout' && $content_type !~ /dmap/) {
-	$self->error("Broken response (content type $content_type) on $url");
-	return;
+        $self->error("Broken response (content type $content_type) on $url");
+        return;
     }
 
     if ($file) {
-	return $res;           # return obj to avoid copying huge string
+        return $res;           # return obj to avoid copying huge string
     } else {
-	return $res->content;
+        return $res->content;
     }
 }
 
