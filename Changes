@@ -1,8 +1,12 @@
-Revision history for Perl extension dapple.
+HEAD
+	DEBUG now optional, and off by default.
+	connections now set keep_alive => 1, so that newer iTunes servers don't
+	think we keep sodding off.
+
+0.2  Fri Mar 23 10:01:04 2003
+        - can list and fetch songs and playlists
 
 0.1  Tue May 13 00:01:47 2003
 	- original version; skeletal framework
-0.2  Fri Mar 23 10:01:04 2003
-        - can list and fetch songs and playlists
 
 

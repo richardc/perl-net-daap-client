@@ -1,6 +1,11 @@
-#!/usr/bin/perl -w
-
+use strict;
 package Net::DAAP::Client;
+use Net::DAAP::DMAP qw(:all);
+use LWP;
+use Carp;
+use sigtrap qw(die untrapped normal-signals);
+use vars qw( $VERSION );
+$VERSION = '0.4';
 
 =head1 NAME
 
@@ -56,26 +61,22 @@ store your object in a lexical (C<my>) variable.
 
 =cut
 
-use LWP;
-use Net::DAAP::DMAP qw(:all);
-use Carp;
-use strict;
-
-use sigtrap qw(die untrapped normal-signals);
-
 my $DAAP_Port = 3689;
 my %Defaults = (
-                SERVER_HOST   => "",
-                SERVER_PORT   => $DAAP_Port,
-                PASSWORD      => "",
-                DEBUG         => 1,
-                ERROR         => "",
-                CONNECTED     => 0,
-                DATABASE_LIST => undef,
-                DATABASE      => undef,
-                SONGS         => undef,
-                PLAYLISTS     => undef,
-                );
+    # user-specified
+    SERVER_HOST   => "",
+    SERVER_PORT   => $DAAP_Port,
+    PASSWORD      => "",
+    DEBUG         => 0,
+
+    # private
+    ERROR         => "",
+    CONNECTED     => 0,
+    DATABASE_LIST => undef,
+    DATABASE      => undef,
+    SONGS         => undef,
+    PLAYLISTS     => undef,
+   );
 
 sub new {
     my $class = shift;
@@ -113,6 +114,10 @@ The port number of the server.
 
 The password to use when authenticating.
 
+=item DEBUG
+
+Print some debugging output
+
 =back
 
 =cut
@@ -121,7 +126,7 @@ sub _init {
     my $self = shift;
     my %opts = @_;
 
-    foreach my $key (qw(SERVER_HOST SERVER_PORT PASSWORD)) {
+    foreach my $key (qw(SERVER_HOST SERVER_PORT PASSWORD DEBUG)) {
         $self->{$key} ||= $opts{$key} ||= "";
     }
 }
@@ -185,13 +190,12 @@ sub connect {
 
     # fetch databases
     my $dbs = $self->databases()
-        or return;
+      or return;
 
     # autoselect if only one database present
-
     if (keys(%$dbs) == 1) {
         $self->db((keys %$dbs)[0])
-            or return;
+          or return;
     }
 
     return $self->{DSN};
@@ -210,7 +214,7 @@ sub databases {
 
     $self->error("");
 
-    if (! $self->{CONNECTED}) {
+    unless ($self->{CONNECTED}) {
         $self->error("Not connected--can't fetch databases list");
         return;
     }
@@ -219,7 +223,7 @@ sub databases {
     my $listing = dmap_seek(dmap_unpack($res),
                             "daap.serverdatabases/dmap.listing");
 
-    if (!$listing) {
+    unless ($listing) {
         $self->error("databases query didn't return a list of databases");
         return;
     }
@@ -257,7 +261,7 @@ sub db {
         return;
     }
 
-    if (! defined $db_id) {
+    unless (defined $db_id) {
         return $self->{DATABASE};
     }
 
@@ -266,10 +270,10 @@ sub db {
         $self->{DATABASE} = $db_id;
         $self->_debug("Loading songs from database $db->{'dmap.itemname'}\n");
         $self->{SONGS} = $self->_get_songs($db_id)
-            or return;
+          or return;
         $self->_debug("Loading playlists from database $db->{'dmap.itemname'}\n");
         $self->{PLAYLISTS} = $self->_get_playlists($db_id)
-            or return;
+          or return;
     } else {
         $self->error("Database ID $db_id not found\n");
         return;
@@ -714,6 +718,10 @@ sub _do_get {
     }
 }
 
+1;
+
+__END__
+
 =head1 LIMITATIONS
 
 No authentication.  No updates.  No browsing.  No searching.
@@ -725,11 +733,11 @@ DAAP developers mailing list by sending mail to <daap-devel-subscribe
 AT develooper.com>.  See the AUTHORS file in the distribution for other
 contributors.
 
+Richard Clamp <richardc@unixbeard.net> took on maintainership duties
+for the 0.4 and subsequent releases.
+
 =head1 SEE ALSO
 
 Net::DAAP::DMAP
 
 =cut
-
-
-1;
