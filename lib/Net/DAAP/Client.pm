@@ -154,11 +154,6 @@ returning C<undef>.
 
 =cut
 
-sub _select_validator {
-    my ($self, %server_info) = @_;
-    $self->{VALIDATOR} = __PACKAGE__."::v3";
-}
-
 
 sub connect {
     my $self = shift;
@@ -673,6 +668,17 @@ sub error {
     if (@_) { $self->{ERROR} = shift } else { $self->{ERROR} }
 }
 
+
+sub _select_validator {
+    my ($self, %server_info) = @_;
+    $self->{VALIDATOR} = undef;
+
+    $self->{VALIDATOR} = __PACKAGE__."::v3"
+      if $server_info{'/dmap.serverinforesponse/daap.protocolversion'} == 3;
+
+    $self->{VALIDATOR} = __PACKAGE__."::v2"
+      if $server_info{'/dmap.serverinforesponse/daap.protocolversion'} == 2;
+}
 
 sub _validation_cookie {
     my $self = shift;
