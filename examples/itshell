@@ -55,7 +55,12 @@ my $Server_port = shift || 3689;
 my $daap = Net::DAAP::Client->new(SERVER_HOST => $Server_host,
                                   SERVER_PORT => $Server_port,
                                   DEBUG => 0);
+push @{ $daap->{SONG_ATTRIBUTES} },
+  qw( daap.songbitrate daap.songsamplerate
+      daap.songstarttime daap.songstoptime
+      daap.songtime );
 $daap->connect() or die "Can't connect: ".$daap->error();
+
 
 my $dbs = $daap->databases;
 
