@@ -152,7 +152,6 @@ sub _init {
 
 sub _debug {
     my $self = shift;
-
     warn "$_[0]\n" if $self->{DEBUG};
 }
 
@@ -173,7 +172,7 @@ returning C<undef>.
 sub connect {
     my $self = shift;
     my $ua = ($self->{UA} ||= LWP::UserAgent->new(keep_alive => 1) );
-    my ($dmap, $id, $revision);
+    my ($dmap, $id);
 
     $self->error("");
     $self->{DATABASE_LIST} = undef;
@@ -188,14 +187,14 @@ sub connect {
     my %hash = dmap_flat_list( dmap_unpack ($dmap) );
     my $data_source_name = $hash{'/dmap.serverinforesponse/dmap.itemname'};
     $self->{DSN} = $data_source_name;
-    $self->_debug("Connected to iTunes data $data_source_name\n");
+    $self->_debug("Connected to iTunes share '$data_source_name'");
     $self->_select_validator( %hash );
 
     # log in
     $dmap = $self->_do_get("login") or return;
     $id = dmap_seek(dmap_unpack($dmap), "dmap.loginresponse/dmap.sessionid");
     $self->{ID} = $id;
-    $self->_debug("my id is $id\n");
+    $self->_debug("my id is $id");
 
     $self->{CONNECTED} = 1;
 
@@ -279,14 +278,14 @@ sub db {
     $db = $self->{DATABASE_LIST}{$db_id};
     if (defined $db) {
         $self->{DATABASE} = $db_id;
-        $self->_debug("Loading songs from database $db->{'dmap.itemname'}\n");
+        $self->_debug("Loading songs from database $db->{'dmap.itemname'}");
         $self->{SONGS} = $self->_get_songs($db_id)
           or return;
-        $self->_debug("Loading playlists from database $db->{'dmap.itemname'}\n");
+        $self->_debug("Loading playlists from database $db->{'dmap.itemname'}");
         $self->{PLAYLISTS} = $self->_get_playlists($db_id)
           or return;
     } else {
-        $self->error("Database ID $db_id not found\n");
+        $self->error("Database ID $db_id not found");
         return;
     }
 
@@ -649,15 +648,18 @@ sub disconnect {
     my $self = shift;
 
     $self->error("");
-    (undef) = $self->_do_get("logout");
+    if ($self->{CONNECTED}) {
+        (undef) = $self->_do_get("logout");
+    }
+    $self->ua->conn_cache->drop(undef);
     undef $self->{CONNECTED};
     return $self->error;
 }
 
 sub DESTROY {
     my $self = shift;
-    $self->_debug("Destroying $self->{ID} to $self->{SERVER_HOST}\n");
-    $self->disconnect if $self->{CONNECTED};
+    $self->_debug("Destroying $self->{ID} to $self->{SERVER_HOST}");
+    $self->disconnect;
 }
 
 =head2 * error()
@@ -671,7 +673,7 @@ Returns the most recent error code.  Empty string if no error occurred.
 sub error {
     my $self = shift;
     if ($self->{DEBUG} and defined($_[0]) and length($_[0])) {
-        warn "Setting error to $_[0]";
+        warn "Setting error to $_[0]\n";
     }
     if (@_) { $self->{ERROR} = shift } else { $self->{ERROR} }
 }
@@ -749,7 +751,7 @@ sub _do_get {
 
     # complain if the server sent back the wrong response
     unless ($res->is_success) {
-        $self->error("$url\n".$res->as_string);
+        $self->error("$url\n" . $res->as_string);
         return;
     }
 

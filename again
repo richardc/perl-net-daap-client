@@ -1,8 +1,8 @@
 #!perl
 use strict;
 use Net::DAAP::Client;
-for (1..4) {
-    my $d = Net::DAAP::Client->new(SERVER_HOST => 'localhost', DEBUG => 1);
+for (1..10) {
+    my $d = Net::DAAP::Client->new(SERVER_HOST => 'localhost', DEBUG => 0);
     $d->connect or exit;
-    print "-------------------\n";
 }
+print "all ok\n";
