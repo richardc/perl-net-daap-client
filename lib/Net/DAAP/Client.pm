@@ -2,7 +2,7 @@ use strict;
 package Net::DAAP::Client;
 use Net::DAAP::Client::v2;
 use Net::DAAP::Client::v3;
-use Net::DAAP::DMAP 1.21;
+use Net::DAAP::DMAP 1.22;
 use Net::DAAP::DMAP qw(:all);
 use LWP;
 use HTTP::Request::Common;
@@ -651,7 +651,6 @@ sub disconnect {
     if ($self->{CONNECTED}) {
         (undef) = $self->_do_get("logout");
     }
-    $self->ua->conn_cache->drop(undef);
     undef $self->{CONNECTED};
     return $self->error;
 }
