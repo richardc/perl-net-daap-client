@@ -169,19 +169,13 @@ returning C<undef>.
 =cut
 
 
-# quite the fugly hack
-my @credentials;
-{
-    package Net::DAAP::Client::UA;
-    use base qw( LWP::UserAgent );
-    sub get_basic_credentials { return @credentials }
-}
-
 sub connect {
     my $self = shift;
     my $ua = ($self->{UA} ||= Net::DAAP::Client::UA->new(keep_alive => 1) );
-    @credentials = $self->{PASSWORD} ? ('iTunes_4.6', $self->{PASSWORD}) : ();
     my ($dmap, $id);
+
+    $self->_devine_validator;
+
 
     $self->error("");
     $self->{DATABASE_LIST} = undef;
@@ -197,7 +191,6 @@ sub connect {
     my $data_source_name = $hash{'/dmap.serverinforesponse/dmap.itemname'};
     $self->{DSN} = $data_source_name;
     $self->_debug("Connected to iTunes share '$data_source_name'");
-    $self->_select_validator( %hash );
 
     # log in
     $dmap = $self->_do_get("login") or return;
@@ -686,17 +679,25 @@ sub error {
     if (@_) { $self->{ERROR} = shift } else { $self->{ERROR} }
 }
 
-
-sub _select_validator {
-    my ($self, %server_info) = @_;
+sub _devine_validator {
+    my $self = shift;
     $self->{VALIDATOR} = undef;
+    $self->{M4p_evil}  = 0;
 
-    $self->{VALIDATOR} = __PACKAGE__."::v3"
-      if $server_info{'/dmap.serverinforesponse/daap.protocolversion'} == 3;
+    my $response = $self->{UA}->get( $self->_server_url.'/server-info' );
+    my $server = $response->header('DAAP-Server');
 
-    $self->{VALIDATOR} = __PACKAGE__."::v2"
-      if $server_info{'/dmap.serverinforesponse/daap.protocolversion'} == 2;
+    if ($server =~ m{^iTunes/4.2 }) {
+        $self->{VALIDATOR} = __PACKAGE__."::v2";
+        return;
+    }
+
+    if ($server =~ m{^iTunes/}) {
+        $self->{M4p_evil} = 1;
+        $self->{VALIDATOR} = __PACKAGE__."::v3"
+    }
 }
+
 
 sub _validation_cookie {
     my $self = shift;
@@ -704,28 +705,34 @@ sub _validation_cookie {
     return ( "Client-DAAP-Validation" => $self->{VALIDATOR}->validate( @_ ) );
 }
 
+sub _server_url {
+    my $self = shift;
+    sprintf("http://%s:%d", $self->{SERVER_HOST}, $self->{SERVER_PORT});
+}
+
+# quite the fugly hack
+my @credentials;
+{
+    package Net::DAAP::Client::UA;
+    use base qw( LWP::UserAgent );
+    sub get_basic_credentials { return @credentials }
+
+}
+
 sub _do_get {
     my ($self, $req, $file) = @_;
-    my $server_url = sprintf("http://%s:%d",
-                             $self->{SERVER_HOST},
-                             $self->{SERVER_PORT});
-
     if (!defined wantarray) { carp "_do_get's result is being ignored" }
 
     my $id = $self->{ID};
     my $revision = $self->{REVISION};
     my $ua = $self->{UA};
 
-    my $url = "$server_url/$req";
+    my $url = $self->_server_url . "/$req";
     my $res;
 
     # append session-id and revision-number query args automatically
     if ($self->{ID}) {
-        if ($req =~ m{ \? }x) {
-            $url .= "&";
-        } else {
-            $url .= "?";
-        }
+        $url .= $req =~ m{ \? }x ? "&" : "?";
         $url .= "session-id=$id";
     }
 
@@ -751,12 +758,21 @@ sub _do_get {
        );
 
     #print ">>>>\n", $request->as_string, ">>>>>\n";
+
+    # It would seem that 4.{5,6} are using their internal MD5/M4p for
+    # their digest auth, or some other form of evil, certainly the
+    # regular Digest auth that works with 4.2 gets refused.
+
+    #local *Digest::MD5::new = sub { shift; Digest::MD5::M4p->new( @_ ) }
+    #  if $self->{M4p_evil};
+
+    @credentials = $self->{PASSWORD} ? ('iTunes_4.6', $self->{PASSWORD}) : ();
+
     if ($file) {
         $res = $ua->request($request, $file);
     } else {
         $res = $ua->request($request);
     }
-
     # complain if the server sent back the wrong response
     unless ($res->is_success) {
         $self->error("$url\n" . $res->as_string);
