@@ -5,8 +5,10 @@ Module::Build->new(
     license     => 'perl',
     requires    => {
         'perl' => 5.006,
-        'LWP'  => 0,
-	'Net::DAAP::DMAP' => 0,
+        'Digest::MD5'      => 0,
+        'Digest::MD5::M4p' => 0,
+        'LWP'              => 0,
+        'Net::DAAP::DMAP'  => 0,
     },
     build_requires => {
         'Test::More' => 0,

@@ -1,7 +1,10 @@
 use strict;
 package Net::DAAP::Client;
+use Net::DAAP::Client::v2;
+use Net::DAAP::Client::v3;
 use Net::DAAP::DMAP qw(:all);
 use LWP;
+use HTTP::Request::Common;
 use Carp;
 use sigtrap qw(die untrapped normal-signals);
 use vars qw( $VERSION );
@@ -76,6 +79,7 @@ my %Defaults = (
     DATABASE      => undef,
     SONGS         => undef,
     PLAYLISTS     => undef,
+    VALIDATOR     => undef,
    );
 
 sub new {
@@ -150,6 +154,12 @@ returning C<undef>.
 
 =cut
 
+sub _select_validator {
+    my ($self, %server_info) = @_;
+    $self->{VALIDATOR} = __PACKAGE__."::v3";
+}
+
+
 sub connect {
     my $self = shift;
     my $ua = ($self->{UA} ||= LWP::UserAgent->new(keep_alive => 1) );
@@ -158,16 +168,18 @@ sub connect {
     $self->error("");
     $self->{DATABASE_LIST} = undef;
 
-    # test server alive
+    # get content codes
+    $dmap = $self->_do_get("content-codes") or return;
+    update_content_codes(dmap_unpack($dmap));
+
+    # check server name/version
     $dmap = $self->_do_get("server-info") or return;
-    my $data_source_name = dmap_to_hash_ref($dmap)->{msrv}{minm};
+
+    my %hash = dmap_flat_list( dmap_unpack ($dmap) );
+    my $data_source_name = $hash{'/dmap.serverinforesponse/dmap.itemname'};
     $self->{DSN} = $data_source_name;
     $self->_debug("Connected to iTunes data $data_source_name\n");
-    #$self->protocol( dmap_to_hash_ref($dmap)->{msrv}{minm} );
-
-    # get content codes
-#    $dmap = $self->_do_get("content-codes");
-#    update_content_codes(dmap_unpack($dmap));
+    $self->_select_validator( %hash );
 
     # log in
     $dmap = $self->_do_get("login") or return;
@@ -177,7 +189,7 @@ sub connect {
 
     # get update
     $dmap = $self->_do_get("update");
-    if (! $dmap) {
+    unless ($dmap) {
         $self->disconnect;
         return;
     }
@@ -596,6 +608,8 @@ sub _get_song {
         ($song->{"dmap.itemid"}, $song->{"daap.songformat"});
     my $filename = "$song_id.$format";
 
+    ++$self->{REQUEST_ID};
+
     if ($dir) {
         return $self->_do_get("databases/$db_id/items/$filename",
                               "$dir/$filename");
@@ -659,6 +673,13 @@ sub error {
     if (@_) { $self->{ERROR} = shift } else { $self->{ERROR} }
 }
 
+
+sub _validation_cookie {
+    my $self = shift;
+    return unless $self->{VALIDATOR};
+    return ( "Client-DAAP-Validation" => $self->{VALIDATOR}->validate( @_ ) );
+}
+
 sub _do_get {
     my ($self, $req, $file) = @_;
     my $server_url = sprintf("http://%s:%d",
@@ -692,15 +713,28 @@ sub _do_get {
 
     $self->_debug($url);
 
+    # form the request ourself so we have magic headers.
+    my $path = $url;
+    $path =~ s{http://.*?/}{/};
+
+    my $reqid = $self->{REQUEST_ID};
+    my $request = HTTP::Request::Common::GET(
+        $url,
+        "Client-DAAP-Version"      => '3.0',
+        "Client-DAAP-Access-Index" => 2,
+        $reqid ? ( "Client-DAAP-Request-ID" => $reqid ) : (),
+        $self->_validation_cookie( $path, 2, $reqid ),
+       );
+
+    #print ">>>>\n", $request->as_string, ">>>>>\n";
     if ($file) {
-        $res = $ua->request(HTTP::Request::Common::GET($url),$file);
+        $res = $ua->request($request, $file);
     } else {
-        $res = $ua->get($url);
+        $res = $ua->request($request);
     }
 
     # complain if the server sent back the wrong response
-
-    if (! $res->is_success) {
+    unless ($res->is_success) {
         $self->error("$url\n".$res->as_string);
         return;
     }
