@@ -47,7 +47,7 @@ use Carp;
 use strict;
 use Text::ParseWords;
 use Data::Dumper;
-use Term::Readline;
+use Term::ReadLine;
 
 my $Server_host = shift || 'localhost';
 my $Server_port = shift || 3689;
