@@ -1,5 +1,7 @@
 Changes
 lib/Net/DAAP/Client.pm
+lib/Net/DAAP/Client/v2.pm
+lib/Net/DAAP/Client/v3.pm
 Build.PL
 Makefile.PL
 MANIFEST
