@@ -1,0 +1,15 @@
+$VAR1 = [
+          [
+            'dmap.loginresponse',
+            [
+              [
+                'dmap.status',
+                200
+              ],
+              [
+                'dmap.sessionid',
+                2393
+              ]
+            ]
+          ]
+        ];
