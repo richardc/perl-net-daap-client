@@ -1,4 +1,10 @@
-0.4
+0.41	Monday 26th July, 2004
+	No longer call the /update thing as it hangs on daapd, and we
+	don't currently use the value
+	Fixed a bug in parameter handling in _init
+	Ignores content-type of responses for downloads (daapd interop)
+
+0.4	Monday 26th July, 2004
 	richardc@unixbeard.net took over caretaker duties
 	DEBUG now optional, and off by default.
 	LWP::UserAgent set keep_alive => 1, so that newer iTunes servers don't

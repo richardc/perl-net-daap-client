@@ -754,7 +754,7 @@ sub _do_get {
     }
 
     my $content_type = $res->header("Content-Type");
-    if ($req ne 'logout' && $content_type !~ /dmap/) {
+    if ($req !~ m{(?:/items/\d+\.|logout)} && $content_type !~ /dmap/) {
         $self->error("Broken response (content type $content_type) on $url");
         return;
     }
