@@ -147,7 +147,7 @@ returning C<undef>.
 
 sub connect {
     my $self = shift;
-    my $ua = ($self->{UA} ||= LWP::UserAgent->new);
+    my $ua = ($self->{UA} ||= LWP::UserAgent->new(keep_alive => 1) );
     my ($dmap, $id, $revision);
 
     $self->error("");
