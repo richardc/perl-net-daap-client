@@ -9,7 +9,7 @@ use HTTP::Request::Common;
 use Carp;
 use sigtrap qw(die untrapped normal-signals);
 use vars qw( $VERSION );
-$VERSION = '0.41';
+$VERSION = '0.42';
 
 =head1 NAME
 
@@ -803,7 +803,7 @@ No authentication.  No updates.  No browsing.  No searching.
 =head1 AUTHOR
 
 Nathan Torkington, <nathan AT torkington.com>.  For support, join the
-DAAP developers mailing list by sending mail to <daap-devel-subscribe
+DAAP developers mailing list by sending mail to <daap-dev-subscribe
 AT develooper.com>.  See the AUTHORS file in the distribution for other
 contributors.
 
