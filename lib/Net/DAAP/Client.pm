@@ -399,7 +399,7 @@ sub _get_songs {
     }
 
     my $struct = $self->_unpack_listing_to_hash($listing);
-    delete @{%$struct}{ grep { $struct->{$_}{'daap.songsize'} == 0 } keys %$struct };  # remove deleted songs
+    delete @{$struct}{ grep { $struct->{$_}{'daap.songsize'} == 0 } keys %$struct };  # remove deleted songs
 
     return $struct;
 }
